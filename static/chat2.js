@@ -2,25 +2,40 @@ $(document).ready(function() {
     if (!window.console) window.console = {};
     if (!window.console.log) window.console.log = function() {};
 
-    $("#messageform").click(function() {
-        newMessage($(this));
+    $("#send").click(function() {
+        newMessage($("#messageform"));
         return false;
     });
     $("#message").select();
     updater.poll();
 });
 
+var getUrlParameter = function getUrlParameter(sParam) {
+    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : sParameterName[1];
+        }
+    }
+};
+
 function newMessage(form) {
     var message = form.formToDict();
-    var disabled = form.find("input[type=submit]");
-    disabled.disable();
-    $.postJSON("/message", message, function(response) {
+    // var disabled = form.find("input[type=submit]");
+    // disabled.disable();
+    $.postJSON("/message?from=" + getUrlParameter("user"), message, function(response) {
         updater.showMessage(response);
         if (message.id) {
             form.parent().remove();
         } else {
             form.find("input[type=text]").val("").select();
-            disabled.enable();
+            // disabled.enable();
         }
     });
 }
@@ -71,7 +86,7 @@ var updater = {
     poll: function() {
         var args = {"_xsrf": getCookie("_xsrf")};
         if (updater.cursor) args.cursor = updater.cursor;
-        $.ajax({url: "/message", type: "GET", dataType: "text",
+        $.ajax({url: "/message?user=" + getUrlParameter("user"), type: "GET", dataType: "text",
                 data: $.param(args), success: updater.onSuccess,
                 error: updater.onError});
     },
